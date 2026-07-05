@@ -28,7 +28,11 @@ public final class FriendCommand implements SimpleCommand {
         }
         String[] args = invocation.arguments();
         if (args.length == 0) {
-            messages.send(player, "usage-friend");
+            if (invocation.alias().equalsIgnoreCase("friends")) {
+                menus.friends(player, 1, false);
+            } else {
+                menus.main(player);
+            }
             return;
         }
         switch (args[0].toLowerCase()) {
