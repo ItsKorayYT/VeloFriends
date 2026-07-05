@@ -1,0 +1,78 @@
+# VelocityFriends configuration
+#
+# Velocity does not have a Minecraft/Velocity API version named 26.1.2.
+# This plugin targets modern Velocity 3.x APIs. PaperMC's current plugin
+# development docs list velocity-api 3.5.0-SNAPSHOT and Java 21+.
+
+storage:
+  # sqlite or mysql
+  type: sqlite
+  sqlite-file: velocityfriends.db
+  mysql:
+    host: localhost
+    port: 3306
+    database: velocityfriends
+    username: velocityfriends
+    password: change-me
+    use-ssl: false
+    pool-size: 10
+    connection-timeout-ms: 10000
+
+friends:
+  request-expiry-minutes: 10080
+  request-cooldown-seconds: 30
+  default-limit: 100
+  permission-limits:
+    velocityfriends.limit.250: 250
+    velocityfriends.limit.500: 500
+  purge-batch-size: 500
+
+privacy-defaults:
+  friend-requests: true
+  dm-privacy: everyone
+  online-status-visibility: friends
+  server-visibility: friends
+  messages-enabled: true
+  friend-notifications: true
+  social-spy: false
+  actionbar-dm: false
+  sound-dm: false
+
+notifications:
+  friend-join: true
+  friend-leave: true
+  friend-server-change: true
+
+messages:
+  format:
+    incoming-dm: "<gray>[<aqua>{player}</aqua> -> you]</gray> <white>{message}</white>"
+    outgoing-dm: "<gray>[you -> <aqua>{target}</aqua>]</gray> <white>{message}</white>"
+    spy-dm: "<dark_gray>[Spy]</dark_gray> <gray>{player} -> {target}: {message}</gray>"
+    join: "<green>{player}</green> <gray>joined the network.</gray>"
+    leave: "<red>{player}</red> <gray>left the network.</gray>"
+    server-change: "<aqua>{player}</aqua> <gray>moved to</gray> <yellow>{server}</yellow><gray>.</gray>"
+
+gui:
+  bedrock-forms-enabled: true
+  java-clickable-enabled: true
+  icons-enabled: false
+  page-size: 8
+  titles:
+    main: "Social Menu"
+    friends: "Friends"
+    requests: "Friend Requests"
+    direct-message: "Direct Message"
+    privacy: "Privacy Settings"
+    blocked: "Blocked and Ignored"
+    favorites: "Favorites"
+  buttons:
+    friends: "Friends"
+    requests: "Requests"
+    direct-message: "Direct Message"
+    privacy: "Privacy Settings"
+    blocked: "Blocked/Ignored"
+    favorites: "Favorites"
+    back: "Back"
+    close: "Close"
+
+debug: false
