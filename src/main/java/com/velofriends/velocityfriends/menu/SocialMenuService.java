@@ -43,6 +43,7 @@ public final class SocialMenuService {
     public void main(Player player) {
         if (bedrock(player)) {
             List<FloodgateIntegration.FormButton> buttons = List.of(
+                    new FloodgateIntegration.FormButton(config.gui().buttons().addFriend(), () -> addFriend(player)),
                     new FloodgateIntegration.FormButton(config.gui().buttons().friends(), () -> friends(player, 1, false)),
                     new FloodgateIntegration.FormButton(config.gui().buttons().requests(), () -> requests(player)),
                     new FloodgateIntegration.FormButton(config.gui().buttons().directMessage(), () -> directMessage(player)),
@@ -121,6 +122,17 @@ public final class SocialMenuService {
                 formsUnavailable(player);
             }
         });
+    }
+
+    private void addFriend(Player player) {
+        boolean sent = floodgate.sendInputForm(player, config.gui().buttons().addFriend(), "Player", "Type a player name...", target -> {
+            if (target != null && !target.isBlank()) {
+                sendResult(player, friends.add(player, target.strip()));
+            }
+        });
+        if (!sent) {
+            formsUnavailable(player);
+        }
     }
 
     public void directMessage(Player player) {

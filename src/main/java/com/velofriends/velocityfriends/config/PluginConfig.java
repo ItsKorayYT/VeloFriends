@@ -95,6 +95,7 @@ public record PluginConfig(
                                 string(titles, "favorites", "Favorites")
                         ),
                         new Buttons(
+                                string(buttons, "add-friend", "Add Friend"),
                                 string(buttons, "friends", "Friends"),
                                 string(buttons, "requests", "Requests"),
                                 string(buttons, "direct-message", "Direct Message"),
@@ -184,6 +185,7 @@ public record PluginConfig(
     }
 
     public record Buttons(
+            String addFriend,
             String friends,
             String requests,
             String directMessage,

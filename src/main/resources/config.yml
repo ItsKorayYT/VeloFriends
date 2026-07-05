@@ -66,6 +66,7 @@ gui:
     blocked: "Blocked and Ignored"
     favorites: "Favorites"
   buttons:
+    add-friend: "Add Friend"
     friends: "Friends"
     requests: "Requests"
     direct-message: "Direct Message"

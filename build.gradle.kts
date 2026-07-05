@@ -1,10 +1,10 @@
 plugins {
     java
-    id("com.gradleup.shadow") version "8.3.6"
+    id("com.gradleup.shadow") version "9.4.3"
 }
 
 group = "com.velofriends"
-version = "1.0.0"
+version = "1.0.1"
 description = "VelocityFriends - friends, messaging, and social menus for Velocity networks"
 
 val bundledSqliteNativePlatforms = providers.gradleProperty("sqliteNativePlatforms")

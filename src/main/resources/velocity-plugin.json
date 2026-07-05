@@ -1,7 +1,7 @@
 {
   "id": "velocityfriends",
   "name": "VelocityFriends",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Friends, messaging, privacy, and social menus for Velocity networks.",
   "authors": ["VelocityFriends"],
   "main": "com.velofriends.velocityfriends.VelocityFriendsPlugin"

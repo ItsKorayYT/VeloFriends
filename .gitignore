@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+
+# Runtime data
+*.db
+*.db-shm
+*.db-wal
+plugins/
+
+# Logs and crash dumps
+*.log
+hs_err_pid*
+replay_pid*
+
+# IDE/editor files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS files
+.DS_Store
+Thumbs.db

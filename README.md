@@ -27,14 +27,22 @@ VelocityFriends is not a Bukkit/Paper plugin. It does not use backend inventorie
 
 ## Build
 
+Linux/macOS:
+
 ```bash
-gradle clean shadowJar
+./gradlew clean shadowJar
+```
+
+Windows:
+
+```bat
+gradlew.bat clean shadowJar
 ```
 
 The jar is created at:
 
 ```text
-build/libs/VelocityFriends-1.0.0.jar
+build/libs/VelocityFriends-1.0.1.jar
 ```
 
 The shaded jar includes SQLite support, but only bundles native SQLite libraries for `Linux/x86_64` and `Windows/x86_64` by default so the jar stays smaller.
@@ -42,14 +50,14 @@ The shaded jar includes SQLite support, but only bundles native SQLite libraries
 To include a different SQLite native platform:
 
 ```bash
-gradle clean shadowJar -PsqliteNativePlatforms=Linux/x86_64,Mac/aarch64
+./gradlew clean shadowJar -PsqliteNativePlatforms=Linux/x86_64,Mac/aarch64
 ```
 
-If Gradle fails on a mapped/shared Windows drive with a FileHasher error, copy the project to a local drive and build it there.
+The wrapper uses Gradle 9.6.1, so you do not need a global Gradle install. If Gradle fails on a mapped/shared Windows drive with a FileHasher error, copy the project to a local drive and build it there.
 
 ## Install
 
-1. Put `build/libs/VelocityFriends-1.0.0.jar` in the Velocity proxy `plugins` folder.
+1. Put `build/libs/VelocityFriends-1.0.1.jar` in the Velocity proxy `plugins` folder.
 2. Restart the proxy.
 3. Edit the generated files if needed.
 

@@ -38,6 +38,7 @@ public final class JavaMenuRenderer {
     public void main(Player player) {
         sendMenu(player, List.of(
                 title(config.gui().titles().main()),
+                suggestMenuButton(config.gui().buttons().addFriend(), "/friend add ", "Type a player name"),
                 menuButton(config.gui().buttons().friends(), "/friendsgui friends", "Open friends"),
                 menuButton(config.gui().buttons().requests(), "/friendsgui requests", "Open requests"),
                 menuButton(config.gui().buttons().directMessage(), "/friendsgui dm", "Message an online player"),
@@ -208,6 +209,12 @@ public final class JavaMenuRenderer {
     private Component menuButton(String label, String command, String hover) {
         return Component.text("> " + label, NamedTextColor.GREEN, TextDecoration.BOLD)
                 .clickEvent(ClickEvent.runCommand(command))
+                .hoverEvent(HoverEvent.showText(Component.text(hover, NamedTextColor.GOLD)));
+    }
+
+    private Component suggestMenuButton(String label, String command, String hover) {
+        return Component.text("> " + label, NamedTextColor.AQUA, TextDecoration.BOLD)
+                .clickEvent(ClickEvent.suggestCommand(command))
                 .hoverEvent(HoverEvent.showText(Component.text(hover, NamedTextColor.GOLD)));
     }
 

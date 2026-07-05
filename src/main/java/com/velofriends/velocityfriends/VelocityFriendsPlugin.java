@@ -56,7 +56,7 @@ public final class VelocityFriendsPlugin {
 
     private Database database;
     private SocialRepository socialRepository;
-    private String version = "1.0.0";
+    private String version = "1.0.1";
 
     @Inject
     public VelocityFriendsPlugin(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory) {
