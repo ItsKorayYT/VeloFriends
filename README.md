@@ -148,3 +148,4 @@ VelocityFriends does not require backend plugins. Features that would need backe
 # VeloFriends
 # VeloFriends
 # VeloFriends
+# VeloFriends
