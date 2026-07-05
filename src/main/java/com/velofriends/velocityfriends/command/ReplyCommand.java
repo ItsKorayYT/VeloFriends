@@ -37,6 +37,6 @@ public final class ReplyCommand implements SimpleCommand {
 
     @Override
     public boolean hasPermission(Invocation invocation) {
-        return invocation.source().hasPermission("velocityfriends.command.reply");
+        return true;
     }
 }

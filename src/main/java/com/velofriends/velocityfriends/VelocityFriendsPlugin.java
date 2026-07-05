@@ -84,7 +84,7 @@ public final class VelocityFriendsPlugin {
         MessagingService messagingService = new MessagingService(proxy, socialRepository, nameResolver, messageManager, config, serviceExecutor);
         SettingsService settingsService = new SettingsService(socialRepository, nameResolver, serviceExecutor);
         NotificationService notificationService = new NotificationService(proxy, socialRepository, messageManager, config, serviceExecutor);
-        JavaMenuRenderer javaMenus = new JavaMenuRenderer(friendService, settingsService, messageManager, config);
+        JavaMenuRenderer javaMenus = new JavaMenuRenderer(proxy, friendService, settingsService, messageManager, config);
         SocialMenuService menus = new SocialMenuService(proxy, config, messageManager, floodgate, javaMenus, friendService, messagingService, settingsService);
 
         registerCommands(friendService, messagingService, settingsService, menus, floodgate);

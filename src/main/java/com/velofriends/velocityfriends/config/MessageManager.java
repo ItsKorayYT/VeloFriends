@@ -31,16 +31,14 @@ public final class MessageManager {
             Files.createDirectories(dataDirectory);
             Path path = dataDirectory.resolve("messages.yml");
             copyDefault(path, "messages.yml");
+            Map<String, String> parsed = new LinkedHashMap<>(loadDefaults());
             try (Reader reader = Files.newBufferedReader(path)) {
                 Object loaded = yaml.load(reader);
                 if (loaded instanceof Map<?, ?> raw) {
-                    Map<String, String> parsed = new LinkedHashMap<>();
                     raw.forEach((key, value) -> parsed.put(String.valueOf(key), String.valueOf(value)));
-                    messages = parsed;
-                } else {
-                    messages = Map.of();
                 }
             }
+            messages = parsed;
         } catch (IOException exception) {
             logger.error("Unable to load VelocityFriends messages.yml", exception);
             messages = Map.of();
@@ -95,6 +93,20 @@ public final class MessageManager {
                 throw new IOException("Missing bundled resource " + resourceName);
             }
             Files.copy(input, target);
+        }
+    }
+
+    private Map<String, String> loadDefaults() throws IOException {
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("messages.yml")) {
+            if (input == null) {
+                throw new IOException("Missing bundled resource messages.yml");
+            }
+            Object loaded = yaml.load(input);
+            Map<String, String> parsed = new LinkedHashMap<>();
+            if (loaded instanceof Map<?, ?> raw) {
+                raw.forEach((key, value) -> parsed.put(String.valueOf(key), String.valueOf(value)));
+            }
+            return parsed;
         }
     }
 }

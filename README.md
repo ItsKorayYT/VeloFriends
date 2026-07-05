@@ -1,26 +1,59 @@
 # VelocityFriends
 
-VelocityFriends is a Velocity proxy plugin for friends, direct messages, privacy controls, Java clickable chat menus, and optional Bedrock forms through Floodgate/Cumulus.
+VelocityFriends is a proxy-only friends and messaging plugin for Velocity networks.
 
-## Compatibility
+It runs on the Velocity proxy, stores social data in SQLite or MySQL, gives Java players clickable chat menus, and gives Bedrock players Floodgate/Cumulus forms when Floodgate is installed on the proxy.
 
-The requested target version `26.1.2` is not a valid Velocity API or Minecraft Java plugin API version. This project targets modern Velocity 3.x APIs and uses `com.velocitypowered:velocity-api:3.5.0-SNAPSHOT` with Java 21, matching current PaperMC Velocity development guidance. It does not use Bukkit, Spigot, or Paper APIs.
+No backend Paper, Spigot, or Bukkit plugin is required.
 
-Floodgate is optional. If Floodgate is not installed, all players use the Java Adventure clickable chat menus. If Floodgate is installed and `gui.bedrock-forms-enabled` is true, Bedrock players are detected through Floodgate and receive native Cumulus forms where available.
+## Requirements
 
-## Building
+- Velocity 3.x
+- Java 21 or newer
+- Optional: Floodgate on the Velocity proxy for Bedrock forms
+
+VelocityFriends is not a Bukkit/Paper plugin. It does not use backend inventories, Protocolize, or server-side chest GUI APIs.
+
+## Features
+
+- Friend requests, friend lists, favorites, private notes, blocks, and ignores
+- Direct messages, replies, `/togglemsg`, and per-player ignore lists
+- Privacy settings for DMs, online status, friend requests, and visible server
+- Friend join, leave, and server-change notifications
+- Optional admin social spy
+- SQLite by default, with MySQL/MariaDB support
+- Java clickable chat menus with hover and command actions
+- Bedrock forms through Floodgate/Cumulus
+
+## Build
 
 ```bash
 gradle clean shadowJar
 ```
 
-The production jar is created at:
+The jar is created at:
 
 ```text
 build/libs/VelocityFriends-1.0.0.jar
 ```
 
-Copy that jar into your Velocity proxy `plugins/` directory and restart the proxy. On first start, VelocityFriends creates:
+The shaded jar includes SQLite support, but only bundles native SQLite libraries for `Linux/x86_64` and `Windows/x86_64` by default so the jar stays smaller.
+
+To include a different SQLite native platform:
+
+```bash
+gradle clean shadowJar -PsqliteNativePlatforms=Linux/x86_64,Mac/aarch64
+```
+
+If Gradle fails on a mapped/shared Windows drive with a FileHasher error, copy the project to a local drive and build it there.
+
+## Install
+
+1. Put `build/libs/VelocityFriends-1.0.0.jar` in the Velocity proxy `plugins` folder.
+2. Restart the proxy.
+3. Edit the generated files if needed.
+
+Generated files:
 
 ```text
 plugins/velocityfriends/config.yml
@@ -28,9 +61,30 @@ plugins/velocityfriends/messages.yml
 plugins/velocityfriends/velocityfriends.db
 ```
 
+## Menus
+
+Java players use a clickable chat menu. It works entirely through Velocity Adventure components, so it does not need backend inventory APIs.
+
+Bedrock players use Floodgate/Cumulus forms. Bedrock players are not sent to the Java clickable chat menu because Bedrock clients cannot reliably click those chat components.
+
+If Bedrock forms do not open, check that Floodgate is installed on the proxy and that this is enabled:
+
+```yaml
+gui:
+  bedrock-forms-enabled: true
+```
+
 ## Storage
 
-SQLite is the default and requires no external setup. MySQL/MariaDB can be enabled in `config.yml`:
+SQLite is the default:
+
+```yaml
+storage:
+  type: sqlite
+  sqlite-file: velocityfriends.db
+```
+
+MySQL/MariaDB:
 
 ```yaml
 storage:
@@ -43,49 +97,52 @@ storage:
     password: change-me
 ```
 
-The plugin uses HikariCP and keeps database work asynchronous so commands and listeners do not block the Velocity event path.
+Database work runs asynchronously so commands do not block the proxy event path.
 
 ## Commands
 
-| Command | Description | Permission |
-| --- | --- | --- |
-| `/friend add <player>` | Send a friend request | `velocityfriends.command.friend` |
-| `/friend remove <player>` | Remove a friend | `velocityfriends.command.friend` |
-| `/friend accept <player>` | Accept a request | `velocityfriends.command.friend` |
-| `/friend deny <player>` | Deny a request | `velocityfriends.command.friend` |
-| `/friend cancel <player>` | Cancel outgoing request | `velocityfriends.command.friend` |
-| `/friend list` | Open friend list | `velocityfriends.command.friend` |
-| `/friend requests` | Open requests menu | `velocityfriends.command.friend` |
-| `/friend block <player>` | Block a player | `velocityfriends.command.friend` |
-| `/friend unblock <player>` | Unblock a player | `velocityfriends.command.friend` |
-| `/friend toggle` | Toggle friend requests | `velocityfriends.command.friend` |
-| `/friend favorite <player>` | Toggle favorite friend | `velocityfriends.command.friend` |
-| `/friend note <player> <note>` | Set a private note | `velocityfriends.command.friend` |
-| `/friends`, `/f` | Friend aliases | `velocityfriends.command.friend` |
-| `/dm <player> <message>` | Direct message | `velocityfriends.command.dm` |
-| `/msg`, `/tell` | DM aliases | `velocityfriends.command.dm` |
-| `/reply <message>`, `/r <message>` | Reply to last DM | `velocityfriends.command.reply` |
-| `/togglemsg` | Toggle receiving DMs | `velocityfriends.command.dm` |
-| `/ignore <player>` | Ignore DMs from player | `velocityfriends.command.dm` |
-| `/unignore <player>` | Remove ignore | `velocityfriends.command.dm` |
-| `/socialspy` | Toggle social spy | `velocityfriends.command.socialspy` |
-| `/friendsgui` | Open social menu | `velocityfriends.command.gui` |
-| `/social` | Social menu alias | `velocityfriends.command.gui` |
-| `/vf reload` | Reload config/messages | `velocityfriends.admin.reload` |
-| `/vf info` | Show plugin info | `velocityfriends.admin.reload` |
-| `/vf debug <player>` | Show social debug counts | `velocityfriends.admin.spy` |
-| `/vf forceadd <p1> <p2>` | Force add friendship | `velocityfriends.admin.reload` |
-| `/vf forceremove <p1> <p2>` | Force remove friendship | `velocityfriends.admin.reload` |
-| `/vf purgeold <days>` | Purge old cached players | `velocityfriends.admin.reload` |
-| `/vf migrate` | Confirms schema migration state | `velocityfriends.admin.reload` |
+Basic player commands are available to everyone by default.
+
+| Command | Description |
+| --- | --- |
+| `/friend`, `/friends`, `/f` | Open the friend/social menu |
+| `/friend add <player>` | Send a friend request |
+| `/friend remove <player>` | Remove a friend |
+| `/friend accept <player>` | Accept a request |
+| `/friend deny <player>` | Deny a request |
+| `/friend cancel <player>` | Cancel an outgoing request |
+| `/friend list` | Open the friend list |
+| `/friend requests` | Open pending requests |
+| `/friend block <player>` | Block a player |
+| `/friend unblock <player>` | Unblock a player |
+| `/friend toggle` | Toggle incoming friend requests |
+| `/friend favorite <player>` | Favorite or unfavorite a friend |
+| `/friend note <player> <note>` | Save a private note |
+| `/friendsgui`, `/social` | Open the social menu |
+| `/dm <player> <message>`, `/msg`, `/tell` | Send a direct message |
+| `/reply <message>`, `/r` | Reply to the last DM |
+| `/togglemsg` | Toggle receiving DMs |
+| `/ignore <player>` | Ignore DMs from a player |
+| `/unignore <player>` | Remove an ignore |
+
+Admin commands:
+
+| Command | Permission |
+| --- | --- |
+| `/socialspy` | `velocityfriends.command.socialspy` or `velocityfriends.admin.spy` |
+| `/vf reload` | `velocityfriends.admin.reload` |
+| `/vf info` | `velocityfriends.admin.reload` |
+| `/vf debug <player>` | `velocityfriends.admin.spy` |
+| `/vf forceadd <p1> <p2>` | `velocityfriends.admin.reload` |
+| `/vf forceremove <p1> <p2>` | `velocityfriends.admin.reload` |
+| `/vf purgeold <days>` | `velocityfriends.admin.reload` |
+| `/vf migrate` | `velocityfriends.admin.reload` |
 
 ## Permissions
 
+These permissions are optional controls for staff, bypasses, and larger friend limits:
+
 ```text
-velocityfriends.command.friend
-velocityfriends.command.dm
-velocityfriends.command.reply
-velocityfriends.command.gui
 velocityfriends.command.socialspy
 velocityfriends.admin.reload
 velocityfriends.admin.spy
@@ -95,57 +152,47 @@ velocityfriends.limit.250
 velocityfriends.limit.500
 ```
 
-Friend limits are configured in `friends.permission-limits`. Add entries such as `velocityfriends.limit.1000: 1000` to support more tiers.
+Friend limits are configured in `config.yml`:
 
-## Menus
-
-Java players receive Adventure clickable chat menus with hover text and run-command actions.
-
-Bedrock players using Floodgate receive native forms when possible:
-
-- Main Social Menu: Friends, Requests, Direct Message, Privacy Settings, Blocked/Ignored, Favorites.
-- Friends List: paginated status list with message, favorite, remove, and block actions.
-- Requests: incoming accept/deny and outgoing cancel actions.
-- Direct Message: online player selector plus CustomForm message input where Cumulus supports it.
-- Privacy Settings: friend requests, DM privacy, online visibility, and server visibility.
-- Blocked/Ignored: unblock and unignore actions.
-
-If a Cumulus form method is unavailable because of an older Floodgate/Cumulus build, VelocityFriends falls back to the Java clickable menu instead of failing startup.
-
-## Text and Formatting
-
-All player-facing text lives in `messages.yml` and uses MiniMessage. Configurable placeholders include:
-
-```text
-{player} {target} {message} {server} {status} {count} {page} {max_page} {time}
+```yaml
+friends:
+  permission-limits:
+    velocityfriends.limit.250: 250
+    velocityfriends.limit.500: 500
 ```
 
-DM message bodies are inserted as unparsed MiniMessage placeholders, so players cannot inject formatting tags into message formats.
+Add more tiers by adding more permission nodes to that map.
 
-## Example Screenshots, Described
+## Messages
 
-Main Social Menu: a compact chat/form menu headed `Social Menu`, with clear entries for Friends, Requests, Direct Message, Privacy Settings, Blocked/Ignored, and Favorites.
+Player-facing messages live in `messages.yml` and use MiniMessage.
 
-Friends List: favorite friends appear first, then other friends sorted by name. Online friends show `online` and a visible server if their privacy allows it.
+Common placeholders:
 
-Requests Menu: incoming requests show Accept and Deny actions; outgoing requests show Cancel.
+```text
+{player}
+{target}
+{message}
+{server}
+{status}
+{count}
+{page}
+{max_page}
+{time}
+```
 
-Bedrock Direct Message Form: a player selector opens a message input form with a single text field and submit action.
+DM message text is escaped before insertion into MiniMessage formats, so players cannot inject formatting tags into messages.
 
 ## Troubleshooting
 
-- The plugin must be installed on the Velocity proxy, not backend Paper servers.
-- Do not install this as a Bukkit/Paper plugin. It has no inventory GUI code and no backend API dependency.
-- If Bedrock forms do not appear, verify Floodgate is installed on the proxy and `gui.bedrock-forms-enabled` is true.
-- If MySQL fails, confirm credentials, database permissions, and that the proxy can reach the database host.
-- If players cannot friend offline users, the target must have joined the proxy once so their UUID/name can be cached.
-- Sound notifications are intentionally optional placeholders because Velocity cannot reliably play client sounds without backend server support.
-- Actionbar DM notifications are proxy-safe and are controlled by the stored player setting.
+- Install the jar on Velocity, not on backend servers.
+- Use Java 21 or newer.
+- Install Floodgate on the proxy if you want Bedrock forms.
+- Keep `gui.bedrock-forms-enabled: true` for Bedrock menus.
+- Offline player lookup works after a player has joined the proxy once.
+- For MySQL, check credentials, database permissions, and network access from the proxy host.
+- For non-default SQLite native platforms, rebuild with `-PsqliteNativePlatforms=<platform>`.
 
-## Optional Backend Support
+## Scope
 
-VelocityFriends does not require backend plugins. Features that would need backend cooperation, such as custom sounds from server resource packs or inventory GUIs, are intentionally left out or exposed only as safe proxy-side placeholders.
-# VeloFriends
-# VeloFriends
-# VeloFriends
-# VeloFriends
+VelocityFriends intentionally stays proxy-only. True chest inventory GUIs, backend resource-pack sounds, and backend-only APIs are outside the plugin unless a supported proxy-side protocol path exists.

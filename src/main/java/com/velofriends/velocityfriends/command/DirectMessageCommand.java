@@ -37,6 +37,6 @@ public final class DirectMessageCommand implements SimpleCommand {
 
     @Override
     public boolean hasPermission(Invocation invocation) {
-        return invocation.source().hasPermission("velocityfriends.command.dm");
+        return true;
     }
 }

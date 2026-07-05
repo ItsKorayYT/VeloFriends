@@ -54,7 +54,7 @@ messages:
 
 gui:
   bedrock-forms-enabled: true
-  java-clickable-enabled: true
+  java-chat-menu-enabled: true
   icons-enabled: false
   page-size: 8
   titles:

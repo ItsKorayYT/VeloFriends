@@ -55,8 +55,7 @@ public final class SocialMenuCommand implements SimpleCommand {
 
     @Override
     public boolean hasPermission(Invocation invocation) {
-        return invocation.source().hasPermission("velocityfriends.command.gui")
-                || invocation.source().hasPermission("velocityfriends.command.friend");
+        return true;
     }
 
     private void handlePrivacy(Player player, String[] args) {

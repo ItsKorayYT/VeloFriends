@@ -16,7 +16,6 @@ import com.velofriends.velocityfriends.util.Page;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public final class SocialMenuService {
     private final ProxyServer proxy;
@@ -55,6 +54,8 @@ public final class SocialMenuService {
             if (floodgate.sendSimpleForm(player, config.gui().titles().main(), "Select a social action.", buttons)) {
                 return;
             }
+            formsUnavailable(player);
+            return;
         }
         javaMenus.main(player);
     }
@@ -70,7 +71,7 @@ public final class SocialMenuService {
                 return;
             }
             if (list.isEmpty()) {
-                messages.send(player, "friend-list-empty");
+                messages.send(player, favoritesOnly ? "favorite-list-empty" : "friend-list-empty");
                 return;
             }
             Page<FriendView> view = Page.of(list, page, config.gui().pageSize());
@@ -88,7 +89,7 @@ public final class SocialMenuService {
             buttons.add(new FloodgateIntegration.FormButton(config.gui().buttons().back(), () -> main(player)));
             if (!floodgate.sendSimpleForm(player, favoritesOnly ? config.gui().titles().favorites() : config.gui().titles().friends(),
                     "Page " + view.page() + "/" + view.maxPage(), buttons)) {
-                javaMenus.friends(player, page, favoritesOnly);
+                formsUnavailable(player);
             }
         });
     }
@@ -117,7 +118,7 @@ public final class SocialMenuService {
             buttons.add(new FloodgateIntegration.FormButton(config.gui().buttons().back(), () -> main(player)));
             String content = "Incoming: " + view.incoming().size() + "\nOutgoing: " + view.outgoing().size();
             if (!floodgate.sendSimpleForm(player, config.gui().titles().requests(), content, buttons)) {
-                javaMenus.requests(player);
+                formsUnavailable(player);
             }
         });
     }
@@ -135,7 +136,7 @@ public final class SocialMenuService {
         }
         buttons.add(new FloodgateIntegration.FormButton(config.gui().buttons().back(), () -> main(player)));
         if (!floodgate.sendSimpleForm(player, config.gui().titles().directMessage(), "Choose an online player.", buttons)) {
-            javaMenus.directMessage(player);
+            formsUnavailable(player);
         }
     }
 
@@ -150,20 +151,88 @@ public final class SocialMenuService {
                 return;
             }
             List<FloodgateIntegration.FormButton> buttons = List.of(
-                    new FloodgateIntegration.FormButton("Friend requests: " + (current.friendRequestsEnabled() ? "on" : "off"),
-                            () -> sendResult(player, friends.toggleRequests(player))),
-                    new FloodgateIntegration.FormButton("DMs: everyone", () -> sendResult(player, settings.setDmPrivacy(player, PrivacyLevel.EVERYONE))),
-                    new FloodgateIntegration.FormButton("DMs: friends", () -> sendResult(player, settings.setDmPrivacy(player, PrivacyLevel.FRIENDS_ONLY))),
-                    new FloodgateIntegration.FormButton("DMs: nobody", () -> sendResult(player, settings.setDmPrivacy(player, PrivacyLevel.NOBODY))),
-                    new FloodgateIntegration.FormButton("Online: everyone", () -> sendResult(player, settings.setOnlinePrivacy(player, PrivacyLevel.EVERYONE))),
-                    new FloodgateIntegration.FormButton("Online: friends", () -> sendResult(player, settings.setOnlinePrivacy(player, PrivacyLevel.FRIENDS_ONLY))),
-                    new FloodgateIntegration.FormButton("Online: nobody", () -> sendResult(player, settings.setOnlinePrivacy(player, PrivacyLevel.NOBODY))),
-                    new FloodgateIntegration.FormButton("Server: friends", () -> sendResult(player, settings.setServerVisibility(player, ServerVisibility.FRIENDS))),
-                    new FloodgateIntegration.FormButton("Server: nobody", () -> sendResult(player, settings.setServerVisibility(player, ServerVisibility.NOBODY))),
+                    new FloodgateIntegration.FormButton("Friend Requests: " + (current.friendRequestsEnabled() ? "on" : "off"),
+                            () -> privacyFriendRequests(player)),
+                    new FloodgateIntegration.FormButton("Direct Messages: " + current.dmPrivacy().configValue(),
+                            () -> privacyDirectMessages(player)),
+                    new FloodgateIntegration.FormButton("Online Status: " + current.onlineStatusVisibility().configValue(),
+                            () -> privacyOnlineStatus(player)),
+                    new FloodgateIntegration.FormButton("Visible Server: " + current.serverVisibility().configValue(),
+                            () -> privacyServerVisibility(player)),
                     new FloodgateIntegration.FormButton(config.gui().buttons().back(), () -> main(player))
             );
-            if (!floodgate.sendSimpleForm(player, config.gui().titles().privacy(), "Choose a privacy setting.", buttons)) {
-                javaMenus.privacy(player);
+            if (!floodgate.sendSimpleForm(player, config.gui().titles().privacy(), "Choose a privacy category.", buttons)) {
+                formsUnavailable(player);
+            }
+        });
+    }
+
+    private void privacyFriendRequests(Player player) {
+        settings.settings(player).whenComplete((current, throwable) -> {
+            if (throwable != null) {
+                messages.send(player, "storage-error");
+                return;
+            }
+            List<FloodgateIntegration.FormButton> buttons = List.of(
+                    new FloodgateIntegration.FormButton(current.friendRequestsEnabled() ? "Turn off" : "Turn on",
+                            () -> sendResult(player, friends.toggleRequests(player))),
+                    new FloodgateIntegration.FormButton(config.gui().buttons().back(), () -> privacy(player))
+            );
+            if (!floodgate.sendSimpleForm(player, "Friend Requests", "Current: " + (current.friendRequestsEnabled() ? "on" : "off"), buttons)) {
+                formsUnavailable(player);
+            }
+        });
+    }
+
+    private void privacyDirectMessages(Player player) {
+        settings.settings(player).whenComplete((current, throwable) -> {
+            if (throwable != null) {
+                messages.send(player, "storage-error");
+                return;
+            }
+            List<FloodgateIntegration.FormButton> buttons = List.of(
+                    new FloodgateIntegration.FormButton("Everyone", () -> sendResult(player, settings.setDmPrivacy(player, PrivacyLevel.EVERYONE))),
+                    new FloodgateIntegration.FormButton("Friends only", () -> sendResult(player, settings.setDmPrivacy(player, PrivacyLevel.FRIENDS_ONLY))),
+                    new FloodgateIntegration.FormButton("Nobody", () -> sendResult(player, settings.setDmPrivacy(player, PrivacyLevel.NOBODY))),
+                    new FloodgateIntegration.FormButton(config.gui().buttons().back(), () -> privacy(player))
+            );
+            if (!floodgate.sendSimpleForm(player, "Direct Messages", "Current: " + current.dmPrivacy().configValue(), buttons)) {
+                formsUnavailable(player);
+            }
+        });
+    }
+
+    private void privacyOnlineStatus(Player player) {
+        settings.settings(player).whenComplete((current, throwable) -> {
+            if (throwable != null) {
+                messages.send(player, "storage-error");
+                return;
+            }
+            List<FloodgateIntegration.FormButton> buttons = List.of(
+                    new FloodgateIntegration.FormButton("Everyone", () -> sendResult(player, settings.setOnlinePrivacy(player, PrivacyLevel.EVERYONE))),
+                    new FloodgateIntegration.FormButton("Friends only", () -> sendResult(player, settings.setOnlinePrivacy(player, PrivacyLevel.FRIENDS_ONLY))),
+                    new FloodgateIntegration.FormButton("Nobody", () -> sendResult(player, settings.setOnlinePrivacy(player, PrivacyLevel.NOBODY))),
+                    new FloodgateIntegration.FormButton(config.gui().buttons().back(), () -> privacy(player))
+            );
+            if (!floodgate.sendSimpleForm(player, "Online Status", "Current: " + current.onlineStatusVisibility().configValue(), buttons)) {
+                formsUnavailable(player);
+            }
+        });
+    }
+
+    private void privacyServerVisibility(Player player) {
+        settings.settings(player).whenComplete((current, throwable) -> {
+            if (throwable != null) {
+                messages.send(player, "storage-error");
+                return;
+            }
+            List<FloodgateIntegration.FormButton> buttons = List.of(
+                    new FloodgateIntegration.FormButton("Friends only", () -> sendResult(player, settings.setServerVisibility(player, ServerVisibility.FRIENDS))),
+                    new FloodgateIntegration.FormButton("Nobody", () -> sendResult(player, settings.setServerVisibility(player, ServerVisibility.NOBODY))),
+                    new FloodgateIntegration.FormButton(config.gui().buttons().back(), () -> privacy(player))
+            );
+            if (!floodgate.sendSimpleForm(player, "Visible Server", "Current: " + current.serverVisibility().configValue(), buttons)) {
+                formsUnavailable(player);
             }
         });
     }
@@ -187,7 +256,7 @@ public final class SocialMenuService {
             }
             buttons.add(new FloodgateIntegration.FormButton(config.gui().buttons().back(), () -> main(player)));
             if (!floodgate.sendSimpleForm(player, config.gui().titles().blocked(), "Blocked: " + view.blocked().size() + "\nIgnored: " + view.ignored().size(), buttons)) {
-                javaMenus.blocked(player);
+                formsUnavailable(player);
             }
         });
     }
@@ -201,7 +270,7 @@ public final class SocialMenuService {
                 new FloodgateIntegration.FormButton(config.gui().buttons().back(), () -> friends(player, 1, false))
         );
         if (!floodgate.sendSimpleForm(player, friend.username(), "Server: " + friend.serverName() + "\nNote: " + friend.note(), buttons)) {
-            javaMenus.friends(player, 1, false);
+            formsUnavailable(player);
         }
     }
 
@@ -212,12 +281,16 @@ public final class SocialMenuService {
             }
         });
         if (!sent) {
-            player.sendMessage(messages.prefixed("usage-dm", Map.of()));
+            formsUnavailable(player);
         }
     }
 
     private boolean bedrock(Player player) {
         return config.gui().bedrockFormsEnabled() && floodgate.isBedrock(player);
+    }
+
+    private void formsUnavailable(Player player) {
+        messages.send(player, "bedrock-forms-unavailable");
     }
 
     private void sendResult(Player player, java.util.concurrent.CompletableFuture<OperationResult> future) {

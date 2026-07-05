@@ -70,7 +70,7 @@ public final class FriendCommand implements SimpleCommand {
 
     @Override
     public boolean hasPermission(Invocation invocation) {
-        return invocation.source().hasPermission("velocityfriends.command.friend");
+        return true;
     }
 
     private void requireTarget(Player player, String[] args, Runnable runnable) {

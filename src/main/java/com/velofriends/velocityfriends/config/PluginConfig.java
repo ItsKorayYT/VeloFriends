@@ -82,7 +82,7 @@ public record PluginConfig(
                 ),
                 new Gui(
                         bool(gui, "bedrock-forms-enabled", true),
-                        bool(gui, "java-clickable-enabled", true),
+                        bool(gui, "java-chat-menu-enabled", bool(gui, "java-chest-enabled", bool(gui, "java-clickable-enabled", true))),
                         bool(gui, "icons-enabled", false),
                         intValue(gui.get("page-size"), 8),
                         new Titles(
@@ -164,7 +164,7 @@ public record PluginConfig(
 
     public record Gui(
             boolean bedrockFormsEnabled,
-            boolean javaClickableEnabled,
+            boolean javaChatMenuEnabled,
             boolean iconsEnabled,
             int pageSize,
             Titles titles,

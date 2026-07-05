@@ -57,7 +57,7 @@ public final class FloodgateIntegration {
                 }
             };
             invokeConsumer(builder, "validResultHandler", handler);
-            Object form = invoke(builder, "build");
+            Object form = invokeResult(builder, "build");
             sendForm(player.getUniqueId(), form);
             return true;
         } catch (ReflectiveOperationException | RuntimeException exception) {
@@ -78,7 +78,7 @@ public final class FloodgateIntegration {
             invokeInput(builder, label, placeholder);
             Consumer<Object> handler = response -> submit.accept(readFirstInput(response));
             invokeConsumer(builder, "validResultHandler", handler);
-            Object form = invoke(builder, "build");
+            Object form = invokeResult(builder, "build");
             sendForm(player.getUniqueId(), form);
             return true;
         } catch (ReflectiveOperationException | RuntimeException exception) {
@@ -98,28 +98,46 @@ public final class FloodgateIntegration {
             logger.info("Floodgate detected; Bedrock forms are enabled when configured.");
         } catch (ReflectiveOperationException exception) {
             api = null;
-            logger.info("Floodgate not detected; using Java clickable chat menus for all players.");
+            logger.info("Floodgate not detected; using Java chat menus for all players.");
         }
     }
 
     private void sendForm(UUID uuid, Object form) throws ReflectiveOperationException {
-        for (Method method : api.getClass().getMethods()) {
-            if (!method.getName().equals("sendForm") || method.getParameterCount() != 2) {
-                continue;
-            }
-            if (method.getParameterTypes()[0].isAssignableFrom(UUID.class)) {
-                method.invoke(api, uuid, form);
-                return;
-            }
+        if (trySendForm(api, uuid, form)) {
+            return;
+        }
+        Object floodgatePlayer = null;
+        try {
+            floodgatePlayer = invokeResult(api, "getPlayer", uuid);
+        } catch (NoSuchMethodException ignored) {
+            // Older Floodgate versions expose only FloodgateApi#sendForm.
+        }
+        if (floodgatePlayer != null && trySendForm(floodgatePlayer, form)) {
+            return;
         }
         throw new NoSuchMethodException("FloodgateApi#sendForm(UUID, Form)");
     }
 
-    private static Object invoke(Object target, String name, Object... args) throws ReflectiveOperationException {
+    private static boolean trySendForm(Object target, Object... args) throws ReflectiveOperationException {
         for (Method method : target.getClass().getMethods()) {
-            if (method.getName().equals(name) && method.getParameterCount() == args.length) {
-                method.invoke(target, args);
-                return target;
+            if (!method.getName().equals("sendForm") || !parametersCompatible(method, args)) {
+                continue;
+            }
+            method.invoke(target, args);
+            return true;
+        }
+        return false;
+    }
+
+    private static Object invoke(Object target, String name, Object... args) throws ReflectiveOperationException {
+        invokeResult(target, name, args);
+        return target;
+    }
+
+    private static Object invokeResult(Object target, String name, Object... args) throws ReflectiveOperationException {
+        for (Method method : target.getClass().getMethods()) {
+            if (method.getName().equals(name) && parametersCompatible(method, args)) {
+                return method.invoke(target, args);
             }
         }
         throw new NoSuchMethodException(name);
@@ -127,12 +145,12 @@ public final class FloodgateIntegration {
 
     private static void invokeConsumer(Object target, String name, Consumer<Object> consumer) throws ReflectiveOperationException {
         for (Method method : target.getClass().getMethods()) {
-            if (method.getName().equals(name) && method.getParameterCount() == 1
-                    && method.getParameterTypes()[0].isAssignableFrom(Consumer.class)) {
+            if (method.getName().equals(name) && parametersCompatible(method, consumer)) {
                 method.invoke(target, consumer);
                 return;
             }
         }
+        throw new NoSuchMethodException(name);
     }
 
     private static void invokeInput(Object target, String label, String placeholder) throws ReflectiveOperationException {
@@ -146,16 +164,23 @@ public final class FloodgateIntegration {
             }
             int count = method.getParameterCount();
             if (count >= 1 && count <= 3) {
-                method.invoke(target, values.subList(0, count).toArray());
-                return;
+                Object[] args = values.subList(0, count).toArray();
+                if (parametersCompatible(method, args)) {
+                    method.invoke(target, args);
+                    return;
+                }
             }
         }
         throw new NoSuchMethodException("input");
     }
 
     private static int clickedButtonId(Object response) {
+        Object formResponse = unwrapResponse(response);
+        if (formResponse == null) {
+            return -1;
+        }
         try {
-            Object result = response.getClass().getMethod("clickedButtonId").invoke(response);
+            Object result = formResponse.getClass().getMethod("clickedButtonId").invoke(formResponse);
             return result instanceof Number number ? number.intValue() : -1;
         } catch (ReflectiveOperationException exception) {
             return -1;
@@ -163,17 +188,78 @@ public final class FloodgateIntegration {
     }
 
     private static String readFirstInput(Object response) {
+        Object formResponse = unwrapResponse(response);
+        if (formResponse == null) {
+            return "";
+        }
         try {
-            Object result = response.getClass().getMethod("asInput", int.class).invoke(response, 0);
+            Object result = formResponse.getClass().getMethod("asInput", int.class).invoke(formResponse, 0);
             return result == null ? "" : String.valueOf(result);
         } catch (ReflectiveOperationException ignored) {
             try {
-                Object result = response.getClass().getMethod("next").invoke(response);
+                Object result = formResponse.getClass().getMethod("next").invoke(formResponse);
                 return result == null ? "" : String.valueOf(result);
             } catch (ReflectiveOperationException ignoredAgain) {
                 return "";
             }
         }
+    }
+
+    private static Object unwrapResponse(Object response) {
+        if (response == null) {
+            return null;
+        }
+        try {
+            Object result = response.getClass().getMethod("response").invoke(response);
+            return result == null ? response : result;
+        } catch (ReflectiveOperationException ignored) {
+            return response;
+        }
+    }
+
+    private static boolean parametersCompatible(Method method, Object... args) {
+        if (method.getParameterCount() != args.length) {
+            return false;
+        }
+        Class<?>[] types = method.getParameterTypes();
+        for (int index = 0; index < args.length; index++) {
+            Object arg = args[index];
+            if (arg != null && !wrap(types[index]).isAssignableFrom(arg.getClass())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static Class<?> wrap(Class<?> type) {
+        if (!type.isPrimitive()) {
+            return type;
+        }
+        if (type == boolean.class) {
+            return Boolean.class;
+        }
+        if (type == byte.class) {
+            return Byte.class;
+        }
+        if (type == short.class) {
+            return Short.class;
+        }
+        if (type == int.class) {
+            return Integer.class;
+        }
+        if (type == long.class) {
+            return Long.class;
+        }
+        if (type == float.class) {
+            return Float.class;
+        }
+        if (type == double.class) {
+            return Double.class;
+        }
+        if (type == char.class) {
+            return Character.class;
+        }
+        return Void.class;
     }
 
     public record FormButton(String label, Runnable action) {

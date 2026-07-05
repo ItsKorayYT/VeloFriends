@@ -39,6 +39,6 @@ public final class IgnoreCommand implements SimpleCommand {
 
     @Override
     public boolean hasPermission(Invocation invocation) {
-        return invocation.source().hasPermission("velocityfriends.command.dm");
+        return true;
     }
 }
